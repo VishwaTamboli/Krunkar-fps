@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Breach — FPS Survival Arena</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <div id="vignette"></div>
+      <div id="crosshair"><span></span></div>
+      <div id="hitmarker">✕</div>
+      <div id="wave-banner" class="hidden">WAVE 1</div>
+
+      <div id="hud" class="hidden">
+        <div id="hud-left">
+          <div id="hp-wrap"><div id="hp-bar"></div><span id="hp-text">100</span></div>
+          <div id="ammo">30 <span>/ ∞</span></div>
+          <div id="reload-tip" class="hidden">RELOADING…</div>
+        </div>
+        <div id="hud-right">
+          <div>WAVE <span id="wave">1</span></div>
+          <div>HOSTILES <span id="remaining">0</span></div>
+          <div>KILLS <span id="kills">0</span></div>
+        </div>
+      </div>
+      <button id="mute-btn" title="Mute (M)">🔊</button>
+      <div id="match-bar" class="hidden">🔴 LIVE <span id="match-time">0:00</span> • <span id="match-count">0</span> players</div>
+      <div id="mp-score" class="hidden"><div class="mp-score-title">SCORE</div><ul id="mp-score-list"></ul></div>
+      <div id="kill-feed"></div>
+      <div id="chat-panel" class="hidden closed">
+        <div id="chat-header"><span id="chat-title">CHAT</span><span id="chat-badge" class="hidden">0</span><button id="chat-min-btn" title="Minimize">–</button></div>
+        <div id="chat-body">
+          <ul id="chat-list"></ul>
+          <div id="chat-input-row"><input id="chat-input" maxlength="200" placeholder="Message (Enter to send)" autocomplete="off" /><button id="chat-send-btn" title="Send">➤</button></div>
+        </div>
+      </div>
+
+      <div id="start-screen" class="overlay">
+        <h1>NEON <span>BREACH</span></h1>
+        <p class="tag">Sci-fi training arena — survive the robot waves.</p>
+        <div class="controls-list">
+          <div><b>WASD</b> move · <b>Mouse</b> look · <b>Click</b> shoot</div>
+          <div><b>Right-click</b> aim · <b>R</b> reload · <b>Space</b> jump</div>
+          <div><b>Shift</b> sprint · <b>M</b> mute · <b>Esc</b> pause</div>
+        </div>
+        <button id="play-btn">▶ &nbsp;Play</button>
+        <button id="mp-btn" class="ghost">🌐 Multiplayer (LAN)</button>
+        <button id="settings-btn" class="ghost">⚙ Settings</button>
+      </div>
+
+      <div id="pause-screen" class="overlay hidden">
+        <h2>PAUSED</h2>
+        <p>Pointer released.</p>
+        <div class="btn-row">
+          <button id="resume-btn">Resume</button>
+          <button id="pause-restart-btn" class="ghost">Restart</button>
+          <button id="pause-settings-btn" class="ghost">⚙</button>
+          <button id="leave-match-btn" class="ghost hidden">Leave match</button>
+        </div>
+      </div>
+
+      <div id="settings-screen" class="overlay hidden">
+        <h2>SETTINGS</h2>
+        <div class="settings-panel">
+          <label class="setting">
+            <span>Mouse Sensitivity: <b id="sens-value">1.0</b></span>
+            <input type="range" id="sens-slider" min="0.1" max="3" step="0.1" value="1" />
+          </label>
+          <label class="setting">
+            <span>Graphics Quality</span>
+            <select id="quality-select">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <label class="setting">
+            <span>Sound Volume: <b id="vol-value">35%</b></span>
+            <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.35" />
+          </label>
+        </div>
+        <div class="btn-row">
+          <button id="settings-reset-btn" class="ghost">Reset to Default</button>
+          <button id="settings-back-btn">Back</button>
+        </div>
+      </div>
+
+      <div id="auth-screen" class="overlay hidden">
+        <h2>SIGN IN</h2>
+        <p class="tag">Accounts live on the host computer. Same Wi-Fi, same account.</p>
+        <div class="settings-panel">
+          <label class="setting">
+            <span>Username (3–16 chars, letters/numbers/_)</span>
+            <input type="text" id="auth-user" maxlength="16" placeholder="e.g. Player1" autocomplete="username" />
+          </label>
+          <label class="setting">
+            <span>Password (min 6 chars)</span>
+            <input type="password" id="auth-pass" placeholder="••••••" autocomplete="current-password" />
+          </label>
+          <div class="btn-row">
+            <button id="auth-login-btn">Log in</button>
+            <button id="auth-register-btn" class="ghost">Register</button>
+          </div>
+          <div id="auth-error" class="hidden"></div>
+        </div>
+        <div class="btn-row">
+          <button id="auth-back-btn" class="ghost">Back</button>
+        </div>
+      </div>
+
+      <div id="lobby-screen" class="overlay hidden">
+        <h2>LAN LOBBY</h2>
+        <p class="tag">Accounts and match history live on the host.</p>
+        <div class="settings-panel">
+          <div id="lobby-status"><span id="lobby-dot"></span><span id="lobby-status-text">Offline</span><span id="lobby-count"></span></div>
+          <div id="lobby-user-row"><span>Signed in as <b id="lobby-user">?</b></span><button id="lobby-logout-btn" class="ghost">Log out</button></div>
+          <div class="btn-row">
+            <button id="lobby-join-btn">Join</button>
+            <button id="lobby-leave-btn" class="ghost">Leave</button>
+          </div>
+          <div id="lobby-match-status" class="tag"></div>
+          <div class="btn-row">
+            <button id="lobby-start-btn" class="hidden">▶ Start match (host)</button>
+            <button id="lobby-deploy-btn" class="hidden">⤓ Deploy</button>
+            <button id="lobby-end-btn" class="ghost hidden">End match</button>
+          </div>
+          <div id="lobby-error" class="hidden"></div>
+          <ul id="lobby-list"></ul>
+        </div>
+        <div class="btn-row">
+          <button id="lobby-back-btn" class="ghost">Back</button>
+        </div>
+      </div>
+
+      <div id="gameover-screen" class="overlay hidden">
+        <h1 class="red">YOU DIED</h1>
+        <div id="stats">
+          <div>Wave reached: <b id="stat-wave">1</b></div>
+          <div>Kills: <b id="stat-kills">0</b></div>
+          <div>Survived: <b id="stat-time">0s</b></div>
+        </div>
+        <button id="again-btn">Play Again</button>
+      </div>
+
+      <div id="mp-death" class="overlay hidden">
+        <h1 class="red">ELIMINATED</h1>
+        <p id="mp-death-text">RESPAWN IN 3</p>
+        <p class="tag">You will respawn automatically.</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
