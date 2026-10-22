@@ -5,6 +5,9 @@ import { io } from 'socket.io-client';
 import { EVENTS, MATCH, COMBAT, CHAT } from '../shared/protocol.js';
 import { getToken, clearSession } from './auth.js';
 
+// Backend URL for Socket.IO (set via VITE_BACKEND_URL at build time)
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 function createNetClient() {
   let socket = null;
   const stateHandlers = new Set();
@@ -33,7 +36,10 @@ function createNetClient() {
         if (!socket.connected) socket.connect();
         return socket;
       }
-      socket = io({ auth: { token: getToken() } });
+      // In production (Vercel), connect directly to Render backend for WebSocket support
+      // In dev, Vite proxy handles it via relative path
+      const url = BACKEND_URL || undefined;
+      socket = io(url, { auth: { token: getToken() }, transports: ['websocket', 'polling'] });
       socket.on('connect', setStatus);
       socket.on('disconnect', setStatus);
       socket.on('connect_error', (e) => {

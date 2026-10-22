@@ -4,6 +4,7 @@
 // host. Only this backend opens that file; it is never served to clients.
 // Scores/stats are written server-side only — no client score claims accepted.
 import express from 'express';
+import cors from 'cors';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +18,17 @@ import { registerUser, loginUser, logoutToken, getSessionUser, authRateLimit } f
 const PORT = Number(process.env.PORT) || 3001;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// CORS: allow Vercel frontend (and localhost for dev)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  /\.vercel\.app$/,
+];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 app.use(express.json({ limit: '16kb' }));
 // DB_PATH override exists so tests can use a scratch database.
 // Default is the host's data/game.sqlite (never served to clients).
@@ -62,8 +74,12 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, stage: 4, players: lobby.size, match: game.state().status });
 });
 
-// Production: serve the built frontend so LAN peers only need the game port.
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+// API-only mode: no frontend served from this backend.
+// Frontend should be deployed separately (Vercel, Netlify, etc.)
+// app.use(express.static(path.join(__dirname, '..', 'dist')));
+// app.get(/^\/(?!api).*/, (_req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+// });
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: true } });
